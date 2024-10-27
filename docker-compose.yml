@@ -1,0 +1,54 @@
+services:
+  # Angular Frontend
+  frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./angular-frontend
+      target: production
+    command: npm run start
+    volumes:
+      - ./angular-frontend:/app
+      - /app/node_modules
+    ports:
+      - "4200:4200"
+    depends_on:
+      - api
+
+  # NestJS Todo Api
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: ./nestjs-backend
+      # Only build development stage from our dockerfile
+      target: production
+    volumes:
+      - ./nestjs-backend:/app
+      - /app/node_modules
+    # dev mode: npm run start:dev / debug: npm run start:debug
+    command: npm run start:dev
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/db
+      JWT_SECRET: abcdefghijk1233456
+    ports:
+      - "3000:3000"
+
+  postgres:
+    image: postgres:14.4
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - 35000:5432
+
+  postgres_admin:
+    image: dpage/pgadmin4:6.12
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - 5050:80
